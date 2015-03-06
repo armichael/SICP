@@ -33,7 +33,7 @@ $$\frac{\frac{x}{y^3}+2y}{3}$$
 
 #+end_src
 
-Approximating \[\phi\]
+Approximating $\phi$:
  
 
 
