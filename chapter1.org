@@ -1,0 +1,39 @@
+#+TITLE: SICP
+#+AUTHOR: Andrew Michael
+#+BABEL: 
+
+------------------------
+* Note
+I'm diving into SICP after having made it much of the way through a similar book called Concrete Abstractions. CA covers a lot of the same material as SICP's first few sections in great detail, so my notes over these sections will be limited to mostly the odd exercise or so.
+
+* 1: Building Abstractions with Procedures
+** Exercise 1.8 - Approximating cubic roots
+\[\frac{\frac{x}{y^3}+2y}{3}\]
+#+begin_src scheme :session *guile*
+  (define (cbrt x)
+    (cbrt-iter 1.0 x))
+  (define (cbrt-iter guess x)
+    (if (good-enough? guess x)
+        guess
+        (cbrt-iter (improve guess x) x)))
+  (define (improve guess x)
+    (/ (+ (/ x (* guess guess)) (* 2 guess)) 3))
+  (define (good-enough? guess x)
+    (< (abs (- (expt guess 3) x)) 0.001))
+
+  (cbrt 39837)
+#+end_src
+
+#+RESULTS:
+: 34.15300134325344
+
+* 2: Procedures and Processes
+** Fibonacci numbers
+#+begin_src scheme :session *guile*
+
+#+end_src
+
+Approximating \[\phi\]
+ 
+
+
