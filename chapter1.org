@@ -8,7 +8,7 @@ I'm diving into SICP after having made it much of the way through a similar book
 
 * 1: Building Abstractions with Procedures
 ** Exercise 1.8 - Approximating cubic roots
-\[\frac{\frac{x}{y^3}+2y}{3}\]
+$$\frac{\frac{x}{y^3}+2y}{3}$$
 #+begin_src scheme :session *guile*
   (define (cbrt x)
     (cbrt-iter 1.0 x))
