@@ -32,10 +32,10 @@ The above exercise, but organized under one definition:
 #+begin_src scheme :session *guile*
   (define (cbrt x)  
     (define (cbrt-iter guess x)
-      (let ([improve (lambda (guess x)
-                       (/ (+ (/ x (expt guess 2)) (* 2 guess)) 3))]
-            [good-enough? (lambda (guess x)
-                            (< (abs (- (expt guess 3) x)) 0.001))])
+      (let ((improve (lambda (guess x)
+                       (/ (+ (/ x (expt guess 2)) (* 2 guess)) 3)))
+            (good-enough? (lambda (guess x)
+                            (< (abs (- (expt guess 3) x)) 0.001))))
         (if (good-enough? guess x)
             guess
             (cbrt-iter (improve guess x) x))))
@@ -68,11 +68,11 @@ An example:
           (* n (fact-r (- n 1)))))
     ;; an iterative factorial function
     (define (fact-i n)
-      (letrec ([iter
+      (letrec ((iter
              (lambda (n product)
                (if (= 1 n)
                    product
-                   (iter (- n 1) (* product n))))])
+                   (iter (- n 1) (* product n))))))
         (iter n 1)))
 
 #+end_src
