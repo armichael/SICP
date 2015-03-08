@@ -102,7 +102,7 @@ Some Schemes feature a useful macro called "named let" that mirrors particular u
 
 #+end_src
 
-Approximating $\phi$:
+Approximating $\varphi$:
 
 * Building Abstractions with Data
 * Modularity, Objects, and State
