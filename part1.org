@@ -1,6 +1,6 @@
 #+TITLE: SICP
 #+AUTHOR: Andrew Michael
-#+BABEL: 
+#+BABEL: :exports both
 
 ------------------------
 
@@ -48,37 +48,60 @@ The above exercise, but organized under one definition:
 : 34.15300134325344
 
 ** 1.2: Procedures and Processes
-Procedural abstraction is the first big idea introduced by this book. When people say "computer science isn't necessarily about computers or science", this is what they mean.
-*** Recursion and Iteration
-This chapter examines linear recursion and iteration, as well as the term /procedure/ and what it means for local and global transformations of patterns. Specifically, recursive processes and linear processes have different "shapes". They relate to the elements of computation differently in how the procedure carries out through time and (memory) space.
+Procedural abstraction is the first essential CS idea introduced by this book. When people say that /"computer science isn't necessarily about computers or science"/, this is perhaps what they mean. Computer science is about /computation/, which can occur in any substrate (material, biological or otherwise) deemed sufficient to carry out procedural manipulation of information.
 
-Recursive processes defer a chain of operations and then rapidly contract. A function that calls itself as an operation generate a recursive process.
+*** Recursion and Iteration
+This chapter examines linear recursion and iteration, as well as the term /procedure/ and what it means for local and global transformations. Specifically, recursive processes and linear processes have different "shapes". They relate to the elements of computation differently in how the procedure carries out through time and (memory) space.
+
+Recursive processes defer a chain of operations and then rapidly contract. A function that calls itself as a parameter in an operation generates a recursive process.
 
 Example: for computing a factorial ($n!$), the number of steps would grow linearly with $n$. 
 
-An iterative process would not "contract" in this manner-- it simply keeps track of a fixed number of variable values and then re-iterates, generating a number of steps in finite-memory in which the variables are updated according to a fixed rule.
+An iterative process would not "contract" in this manner-- it simply keeps track of a fixed number of variable values and then re-iterates, generating a number of steps in finite-memory in which the variables are updated according to a fixed rule. An iterative process may call itself as an operation to generate a new state.
 
 **** Recursive Process vs Recursive Procedure
-A function defined in terms of itself is not necessarily recursive. It could be iterative as well. The difference is whether the function calls itself as an argument in an expression (recursive) or simply calls itself with adjustments to variable values (iterative). Ultimately, a recursive process has to negotiate an increasing amount of information (steps /and/ memory grow proportional to the input) whereas an interative process captures the state all at once in each step and starts fresh. The information remains fixed, only the number of steps remain proportional to input.
+A function defined in terms of itself is not necessarily recursive. It could be iterative as well. The difference is whether the function calls itself as a parameter in another expression (recursive) or calls itself just with adjustments to variable values (iterative). This is all illustrated in the code block below. Ultimately, a recursive process has to negotiate an increasing amount of information (steps /and/ memory grow proportional to the input) whereas an interative process captures the state all at once in each step and starts fresh. The information remains fixed, only the number of steps remain proportional to input.
 
 In other words, there is a difference between a recursive /procedure/ and a recursive /process/ (SICP, p.45). A procedure being recursive merely refers to the fact of its syntactical arrangement-- it is defined in terms of itself. Whereas a /process/ being recursive refers to its behavior as it evolves. 
 
 An example:
 
-#+begin_src scheme
+#+begin_src scheme :results no
    ;; a recursive factorial function
     (define (fact-r n)
       (if (= n 0)
           1
           (* n (fact-r (- n 1)))))
+
+(fact-r 5)
+(* 5 (fact-r 4))
+(* 5 (* 4 (fact-r 3)))
+(* 5( * 4 (* 3 (fact-r 2))))
+(* 5 (* 4 (* 3 (* 2 (fact-r 1)))))
+(* 5 (* 4 (* 3 (* 2 (* 1 (fact-r 0))))))
+(* 5 (* 4 (* 3 (* 2 (* 1 1)))))
+(* 5 (* 4 (* 3 (* 2 1))))
+(* 5 (* 4 (* 3 2)))
+(* 5 (* 4 6))
+(* 5 24) ;; -> 120
+
     ;; an iterative factorial function
     (define (fact-i n)
       (letrec ((iter
              (lambda (n product)
-               (if (= 1 n)
+               (if (= 0 n)
                    product
                    (iter (- n 1) (* product n))))))
         (iter n 1)))
+
+(fact-i 5) ;; (iter 5 1)
+   (iter 5 1)
+   (iter 4 5)
+   (iter 3 20)
+   (iter 2 60)
+   (iter 1 120)
+   (iter 0 120) ;; -> 120
+
 #+end_src
 
 
@@ -99,8 +122,8 @@ As an aside, proper dialects of Scheme are /tail-recursive/-- that is, a compile
 
 Some Schemes feature a useful macro called "named let" that mirrors particular uses of =letrec=.
 
-**** Ackermann's function
-This exercise happens to be the one that deters a lot of people from continuing on. It can be maddening, for sure, if you attempt working it out on paper for too long. The Ackermann function is defined as such:
+**** The Ackermann function
+This exercise happens to be the one that discourages a lot of people from continuing on. It can be maddening if you attempt working it out on paper for too long. The Ackermann function is defined as such:
 #+begin_src scheme
   (define (A x y)
     (cond ((= y 0) 0)
@@ -113,7 +136,7 @@ This exercise happens to be the one that deters a lot of people from continuing 
 #+RESULTS:
 : 65536
 
-Mathematically it can be represented as such:
+Mathematically it can be represented as
 
 $$ A(n) = \begin{cases} 0 &\mbox{if } y = 0 \\
                        2y & \mbox{if } x = 0 \\
@@ -122,7 +145,7 @@ $$ A(n) = \begin{cases} 0 &\mbox{if } y = 0 \\
 
 And as with any problem, imagine first the most simple cases, taking 0 or 1 for the variables. You see that it ends without recurse if both of the variables are less than 2.
 
-Now let's take 1 for $x$ and 2 for $y$. Here's an execution tree:
+Now let's take 1 for x and 2 for y. Here's an execution tree:
 #+begin_src scheme :results no
   (A 1 2)
   (A 0 (A 1 1))
@@ -139,7 +162,7 @@ Let's try 2 and 2.
   ...
   (* 2 2)
 #+end_src 
-Also 4.
+Also $4$.
 
 Let's try 2 and 3.
 #+begin_src scheme :results no
@@ -154,53 +177,51 @@ Let's try 2 and 3.
   (A 0 8)
   (* 2 8) ;; -> 16
 #+end_src
+$A(2,3) = 16$
 
-So the process appears to be exponential. But that's still not enough to evoke fear in us, 16 is a small number.
+So the process appears to be exponential. That's not yet enough to scare us: 16 is a small number.
 
 But that's where many an unwitting soul has been lost-- try to evaluate =(A 2 3)= on paper with pencil.
 
-It turns out to be 65536. 
+It turns out to evaluate to 65536. 
 
 #+begin_src scheme :results no
-  (A 2 4)
-  (A 1 (A 2 3)
-  (A 1 (A 1 (A 2 2)))
-   (A 1 (A 1 (A 1 (A 2 1))))
-   (A 1 (A 1 (A 1 2)))
-   (A 1 (A 1 (A 0 (A 1 1))))
-   (A 1 (A 1 (A 0 2)))
-   (A 1 (A 1 4))
-   (A 1 (A 0 (A 1 3)))
-   (A 1 (A 0 (A 0 (A 1 2))))
-   (A 1 (A 0 (A 0 (A 0 (A 1 1)))))
-   (A 1 (A 0 (A 0 (A 0 2))))
-   (A 1 (A 0 (A 0 4)))
-   (A 1 (A 0 8))
-   (A 1 16)
-   (A 0 (A 1 15))
-   (A 0 (A 0 (A 1 14)))
-   (A 0 (A 0 (A 0 (A 1 13))))
-   (A 0 (A 0 (A 0 (A 0 (A 1 12)))))
+ (A 2 4)
+ (A 1 (A 2 3)
+ (A 1 (A 1 (A 2 2)))
+ (A 1 (A 1 (A 1 (A 2 1))))
+ (A 1 (A 1 (A 1 2)))
+ (A 1 (A 1 (A 0 (A 1 1))))
+ (A 1 (A 1 (A 0 2)))
+ (A 1 (A 1 4))
+ (A 1 (A 0 (A 1 3)))
+ (A 1 (A 0 (A 0 (A 1 2))))
+ (A 1 (A 0 (A 0 (A 0 (A 1 1)))))
+ (A 1 (A 0 (A 0 (A 0 2))))
+ (A 1 (A 0 (A 0 4)))
+ (A 1 (A 0 8))
+ (A 1 16)
+ (A 0 (A 1 15))
+ (A 0 (A 0 (A 1 14)))
+ (A 0 (A 0 (A 0 (A 1 13))))
+ (A 0 (A 0 (A 0 (A 0 (A 1 12)))))
   ;; ... we eventually obtain 1024 at the far end
   ;; ... and then 'pop' the zeroes which multiply it by 2
   ;; ...
-  (A 0 (A 0 (A 0 (A 0 4096))))
-   (A 0 (A 0 (A 0 8192)))
-   (A 0 (A 0 16384))
-   (A 0 32768)
-   65536
+ (A 0 (A 0 (A 0 (A 0 4096))))
+ (A 0 (A 0 (A 0 8192)))
+ (A 0 (A 0 16384))
+ (A 0 32768) ;; -> 65536
 
 #+end_src
 
-Try entering numbers too large and your scheme interpreter will hang. This function gets enormous.
+Try entering numbers too large and your scheme interpreter will likely hang. This function produces enormous output with minimal input.
 
-The one nice thing, and you'll have figured this out if you tried with paper, if that you can repeatedly perform subsitutions, treating expression as their eventual results.
+The one nice thing, and you'll have figured this out if you tried with paper, if that you can repeatedly perform subsitutions, treating expressions as their eventual results. Of course, you can do this with most any recursively-defined structure.
 
-It might help to imagine this process visually, or kinetically. Think of the process whittling down the x values until it reachs the deepest depth of its recursion, which will be =(A 0 y)= where y is a large number. Now, once y is whittled down, it evaluates the expression to 2, so this large number will be somehow related to 2.
+It might help to imagine this process visually, or kinetically. Think of the process whittling down the =x=  values, each =x= having a 'petite-recursion' whittling down =y= and ultimately obtaining an evaluation of =2= at the deepest depth of its recursion, yielding =(A 0 2)= as it begins to wind out of that depth. Now the function rapidly contracts, 'popping' the zeroes, doubling this large number for each accumulated =(A 0 ... )=. Our final evaluation will obviously be related to the number 2, because of the evaluation to =2= once $y=1$.
 
-Similarly, as we 'pop' the zeroes 'accumulated' by x, winding down the recursive tree, this large number will be doubled for each zero. So the result will also be related to 2.
-
-We can therefore reasonably venture to guess that the solution will always be a number related to powers of 2 in some way.
+And because of the repeated doubling we can reasonably venture to guess that the final solution will somehow be 2 related to powers of 2 in some way.
 
 The exercise asks us to consider the following procedures:
 #+begin_src scheme :results no
@@ -239,12 +260,16 @@ Now we examine $h(n) = A(2,n)$. For $n=1$, $h(1) = A(2,1) = 4$, as derived earli
   (g (g (g (h (- n 3)))))
 #+end_src
 
-So we see clearly that since $h(n) = g(h(n-1))$, the ultimate expression would evaluate as $g(n)$ nested $n$ times, with the inner-most argument being 2: $g(g(g(...g(2)))$. So 2 to the 2 to the 2 to the 2... This is called *tetration*, or iterated exponentiation (read more [[http://en.wikipedia.org/wiki/Tetration][here]]). It is an operation that outputs numbers /exponentially larger than exponentiation/. It can be represented symbolically as such:
+So we see clearly that since $h(n) = g(h(n-1))$, the ultimate expression would evaluate as $g(n)$ nested $n$ times, with the inner-most argument being 2: $g(g(g(...g(2)))$. So 2 to the 2 to the 2 to the 2... This is called *tetration*, or iterated exponentiation (read more [[http://en.wikipedia.org/wiki/Tetration][here]]). It is an operation with a faster rate of growth than exponentiation. It can be represented symbolically as such:
 
 $$Tet(a, n) = {}^na =\underbrace{a^{a^{a^{\dots^{a}}}}}
 _{n \> times}$$
 
-At this point you might be realize, as I did, that SICP is a partly a math book in disguise.
+Similarly, =(A 3 n)= will be an operation with a greater rate of growth than tetration. And =(A 4 n)= even greater than that, and so on. Incomprehensibly fast rates of growth. For a bit of math humor involving very large numbers, check out [[http://en.wikipedia.org/wiki/Steinhaus%E2%80%93Moser_notation][Steinhaus-Moser notation]].
+
+At this point you might be realize, as I did, that SICP is a partly a math book in disguise. 
+
+Essentialy, /programs are proofs/, and indeed, introductory books like SICP and Concrete Abstractions ask you to do a bit of proof-writing to prove for correctness. So it pays to have a bit of math know-how in the pocket before approaching this material, especially in proof through induction. CA will teach you much of this from first principles-- SICP mostly assumes that you are already familiar with it. This is one reason I'd always recommend CA over SICP for anyone unconfident in their mathematical sophistication.
 
 *** Fibonacci Numbers and Tree Recursion
 Recall the definition of the Fibonacci sequence:
@@ -288,10 +313,80 @@ The recursive process is redundant, with a lot of needless computation, growing 
 
 We recall that successive Fibonacci numbers approximate $\varphi$. Particularly, $F(n)$ is the closet integer to $\varphi^{n}/\sqrt{5}$ [2] and $\varphi$ has the characteristic equation $\varphi^{2} = \varphi + 1$, which tells us concretely right at once that a process used to find Fibonacci numbers with recursive reference to their definition will exponentiate and perform a lot of needless computation.
 
-Tree-recursive processes are useful for hierarchical data, but not for numbers. Here, the iterative process introduces three state variables and resolves in much fewer steps.
+Tree-recursive processes are useful for hierarchical data, but not for numbers. Here, the iterative process introduces three state variables and resolves in far fewer steps.
 
 **** Counting Change
-*** Tree Recursion
+
+Here's a simple program for computing the number of ways you can make change from a given amount of money. This program contains one procedure called =count-combos= that can be used to define other procedures. The =$-combos= function computes =count-combos= for a fixed units list, the currency denominations under a dollar.
+
+#+begin_src scheme
+  (define (count-combos units amount)
+    (cond ((< amount 0) 0)
+          ((= amount 0) 1)
+          ((null? units) 0)
+          (else (+ (count-combos units (- amount (car units)))
+                   (count-combos (cdr units) amount)))))
+
+  (define ($-combos amount)
+   (count-combos '(50 25 10 5 1) amount))
+
+  ($-combos 100)
+#+end_src
+
+#+RESULTS:
+: 292
+
+As they mention in the book, you solve this problem by recognizing that the ways of changing some amount $a$ using $n$ kinds of coins will be equal to
+- the number of ways to change $a$ will all but the first kind of coin
+- the number of ways to change $a - c$ using any all kinds of coins, for $c$ the first kind of coin
+
+This is mirrored in the program above. The main two recursive branches investigate these very two things, and each new branch generates two more branches. Particular branches that "don't work" will yield negative amounts or will run out the coin list before the starting amount is exhausted (so they aren't counted, and evaluate to 0). The combinations that do work will exhaust the amount to 0, and will evaluate to 1. All the branches explored contract under addition operations (which rest at the root of each pair of branches), adding up all the 1's and 0's to the final result. 
+
+**** Exercise 1.12
+We are asked to write a procedure to compute elements of Pascal's triangle by means of a recursive process. 
+
+Explicitly, these elements (binomial coefficients) can be given by $$\frac{n!}{k!(n-k)!}$$
+
+But we're asked to solve this with a recursive function. Easy enough-- any element of the triangle is given by the sum of the two elements above it.
+
+#+begin_src scheme
+  (define (PT-elem row col)
+    (if (or (= 0 col) (= col row))
+        1
+        (+ (PT-elem (- row 1) col)
+           (PT-elem (- row 1) (- col 1)))))
+(PT-elem 5 2)
+#+end_src
+
+#+RESULTS:
+: 10
+
+**** Exercise 1.13
+We prove that the $n$th Fibonacci number is the closest integer to $\varphi^{n}/\sqrt{5}$. The text gives us a hint: recall that $\varphi = 1+\sqrt{5}/2$ and let $\psi = (1 - \sqrt{5})/2$: use induction to prove that $Fib(n) = (\varphi^{n}-\psi^{n})/\sqrt{5}$.
+
+Essentially, the book is using $\psi$ to represent $-1/\varphi$ (see my article on phi for derivations: http://armichael.github.io/posts/2015-03-12-Phi.html#fn1).
+
+We are set with the task of proving what is called the /Binet formula/:
+$$F(n) = \frac{1}{\sqrt{5}}\left[\varphi^{n}-\left(-\frac{1}{\varphi}\right)^{n
+}\right]$$
+
+Using the above definitions for $\varphi$ and $\psi$, we note a few relationships:
+- $\varphi\psi = 1$
+- $\varphi + \psi = 1$
+- $\varphi - \psi = \sqrt{5}$
+
+We recall from the definition of Fibonacci numbers that $F(0)=0$ and $F(1)=1$. We check that our formula holds for these base cases:
+
+$$F(0) = \frac{1-1}{\sqrt{5}} = 0$$
+$$F(1) = \frac{1+\sqrt{5}-(1-\sqrt{5})}{2\sqrt{5}} = 1$$
+
+Inductive hypothesis: we assume that the formula holds for $F(n-1)$ and $F(n-2)$.
+
+So because $F(n)=F(n-1)+F(n-2)$, we must show that where the Binet formula is denoted as $B$,
+$$B(n) = \frac{\varphi^{n}-\psi^{n}}{\sqrt{5}} = B(n-1) + B(n-2)$$
+
+Following from the above, it will suffice to show that $\varphi^{n} = \varphi^{n-1} + \varphi^{n-2}$, and likewise for $\psi$. The rest of the proof is just straightforward algebra and I won't include it here. You'll find that the formula holds for all $n$. 
+
 *** Orders of Growth
 *** Exponentiation
 *** GCD
