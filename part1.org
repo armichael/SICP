@@ -267,7 +267,7 @@ _{n \> times}$$
 
 Similarly, =(A 3 n)= will be an operation with a greater rate of growth than tetration. And =(A 4 n)= even greater than that, and so on. Incomprehensibly fast rates of growth. For a bit of math humor involving very large numbers, check out [[http://en.wikipedia.org/wiki/Steinhaus%E2%80%93Moser_notation][Steinhaus-Moser notation]].
 
-At this point you might be realize, as I did, that SICP is a partly a math book in disguise. 
+At this point you might be realize, as I did, that SICP is partly a math book in disguise. 
 
 Essentialy, /programs are proofs/, and indeed, introductory books like SICP and Concrete Abstractions ask you to do a bit of proof-writing to prove for correctness. So it pays to have a bit of math know-how in the pocket before approaching this material, especially in proof through induction. CA will teach you much of this from first principles-- SICP mostly assumes that you are already familiar with it. This is one reason I'd always recommend CA over SICP for anyone unconfident in their mathematical sophistication.
 
@@ -281,7 +281,7 @@ So:
 $1,1,2,3,5,8,13,21,34,55,89,\dots$
 
 A recursive process to find the $n$th Fibonacci number:
-
+<<fib_target>>
 #+begin_src scheme
   (define (fibonacci n)
     (cond ((= 1 n) 1)
@@ -388,6 +388,104 @@ $$B(n) = \frac{\varphi^{n}-\psi^{n}}{\sqrt{5}} = B(n-1) + B(n-2)$$
 Following from the above, it will suffice to show that $\varphi^{n} = \varphi^{n-1} + \varphi^{n-2}$, and likewise for $\psi$. The rest of the proof is just straightforward algebra and I won't include it here. You'll find that the formula holds for all $n$. 
 
 *** Orders of Growth
+An order of growth is just a crude measure of how the resources required by a procedure will scale with input. "Resources" here can be construed in a few different ways, namely, the time that the procedure takes to execute (the number of mechanical operations), or the memory that the procedure consumes (occupation of storage registers).
+
+The book illustrates a formal definition in the following way: for one of these possible input parameters $n$, we say $R(n)$ is a measure of $n$'s resource consumption, for some resource (time, space, etc.).
+Now, $R(n)$ has order of growth $\Theta (f(n ))$ if there exist some positive constants $c_{1}$ and $c_{2}$ such that for large values of $n$, $c_{1}f(n) \leq R(n) \leq c_{2}f(n)$.
+
+So "Big Theta" of some function $f(n)$ is just a way of saying that input $n$ for a particular process scales to the resource consumption in such a way that the resource consumption will end up between two bounds-- some constant multiples of $f(n)$. Resources are considered to be time and space, and you'll hear talk of the /time complexity/ and /space complexity/ of algorithms.
+
+As an aside from the text: what is the difference between $\Theta$ (Big Theta) and $\mathcal{O}$ (Big O) notation? Why is the latter seen more often informally?
+
+The answer is that big-theta is more specific. It gives an upper /and/ lower bounds. Whereas big-O just provides an upper bounds, used often to answer the question "/how bad can it get?/". Big-O denotes the worst case. Confusingly, sometimes $\mathcal{O}$ is used for both. 
+
+And just as big-O denotes an upper bound, $\Omega$ or "Big Omega" denotes the lower bound-- a measure of a procedure in the "best" case.
+
+Here are some more examples to tease out the thinking behind the notations, taking into account time complexity:
+
+- $\mathcal{O}(1)$ :: an algorithm with a constant rate of growth. It will take the same amount of time to execute, regardless of the input. An example would be a procedure to check if a list is empty. This is a standard function in Scheme.
+#+begin_src scheme
+  (null? lst)
+#+end_src
+
+- $\mathcal{O}(n)$ :: an algorithm with a linear rate of growth. The time it takes to execute will grow in proprotion to the input. An example would be a procedure that checks if an element is in a list.
+#+begin_src scheme
+  (define (elem-in? elem lst)
+    (cond ((null? lst) #f)
+          ((equal? elem (car lst)) #t)
+          (else (elem-in? elem (cdr lst)))))
+#+end_src
+This procedure, in the worst case, cdr's down the whole list (to find that the element is /not/ present).
+
+- $\mathcal{O}(n^{2})$ :: an algorithm with a faster rate of growth than $\mathcal{O}(n)$. This order is commonly found when procedures involve nesting recursions or iterations. A good example here is a bubble sort, here implemented with vectors:
+#+begin_src scheme :results no 
+    (define (bubble-sort vec)
+      (do ((passes (- (vector-length vec) 1)
+                        (- passes 1)))
+          ((= passes 0))
+        (do ((index 0 (+ index 1)))
+            ((= index (- (vector-length vec) 1)))
+          (if (> (vector-ref vec index)
+                 (vector-ref vec (+ index 1)))
+              (vector-swap! vec index (+ index 1)))))
+      vec)
+
+#+end_src
+Typically, a greater power of $n$ suggests a greater number of nested iterations.
+
+- $\mathcal{O}(2^{n})$ :: an algorithm that with an exponential rate of growth. It grows even faster than the above orders. The [[fib_target][naive recursive generation of Fibonacci numbers]] is a good example of a procedure with this rate of growth.
+
+- $\mathcal{O}(n\log n)$ :: an algorithm with time complexity of this order would scale to input in a pseudo-linear fashion (just slightly longer, with even smaller difference for large $n$). An example of this would be a merge sort (which also happens to be $\Theta(n\log n))$).
+#+begin_src scheme 
+  (define (merge-sort lst)
+    (cond ((null? lst) lst) ;; checking bounds
+          ((null? (cdr lst)) lst) ;; checking bounds
+          (else
+           (merge (merge-sort (odd-part lst))
+                  (merge-sort (even-part lst))))))
+
+  (define (merge lst1 lst2)
+    (cond ((null? lst1) lst2) ;; checking bounds
+          ((null? lst2) lst1) ;; checking bounds
+          ((> (car lst1) (car lst2))
+           (cons (car lst2) (merge lst1 (cdr lst2)) ))
+          (else (cons (car lst1) (merge (cdr lst1) lst2)))))
+
+  ;; mutually recursive functions to divide up lists
+  (define (odd-part lst)
+    (if (null?  lst)
+        '()
+        (cons (car lst) (even-part (cdr lst)))))
+  (define (even-part lst)
+    (if (null? lst)
+        '()
+        (odd-part (cdr lst))))
+#+end_src 
+
+- $\mathcal{O}(\log n)$ :: an algorithm of this order has a logarithmic rate of growth. So, procedures of this order are faster in the worst case than procedures of $\mathcal{O}(n)$ (linear). An example of this order would be a procedure for insertion into a binary heap.
+#+begin_src scheme
+    (define (insert tree x)
+      (if (empty-tree? tree)
+          (make-tree x '() '())
+          (cond ((> x (root tree))
+                 (make-tree (root tree)
+                            (left-subtree tree)
+                            (insert (right-subtree tree) x)))
+                ((< x (root tree))
+                 (make-tree (root tree)
+                            (insert (left-subtree tree) x)
+                            (right-subtree tree))))))
+  ;; where
+  (define make-tree
+    (lambda (root l-subtree r-subtree)
+      (list root l-subtree r-subtree)))
+  (define empty-tree? null?)
+  (define root car)
+  (define left-subtree cadr)
+  (define right-subtree caddr)
+#+end_src
+
+
 *** Exponentiation
 *** GCD
 *** Primality
