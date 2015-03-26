@@ -319,7 +319,7 @@ Tree-recursive processes are useful for hierarchical data, but not for numbers. 
 
 Here's a simple program for computing the number of ways you can make change from a given amount of money. This program contains one procedure called =count-combos= that can be used to define other procedures. The =$-combos= function computes =count-combos= for a fixed units list, the currency denominations under a dollar.
 
-#+begin_src scheme
+#+begin_src scheme :exports both
   (define (count-combos units amount)
     (cond ((< amount 0) 0)
           ((= amount 0) 1)
@@ -397,18 +397,18 @@ So "Big Theta" of some function $f(n)$ is just a way of saying that input $n$ fo
 
 As an aside from the text: what is the difference between $\Theta$ (Big Theta) and $\mathcal{O}$ (Big O) notation? Why is the latter seen more often informally?
 
-The answer is that big-theta is more specific. It gives an upper /and/ lower bounds. Whereas big-O just provides an upper bounds, used often to answer the question "/how bad can it get?/". Big-O denotes the worst case. Confusingly, sometimes $\mathcal{O}$ is used for both. 
+The answer is that big-theta is more specific. It gives an upper /and/ lower bounds. Whereas big-O just provides an upper bounds, used often to answer the question "/how bad can it get?/". Big-O denotes a bounds for the worst case-- for large input $n$, it won't ever get worse than ____. Confusingly, sometimes $\mathcal{O}$ is used for both. 
 
-And just as big-O denotes an upper bound, $\Omega$ or "Big Omega" denotes the lower bound-- a measure of a procedure in the "best" case.
+And just as big-O denotes an asymptotic upper bound, $\Omega$ or "Big Omega" denotes an asymptotic lower bound-- a lower bounds of a procedure for the "ideal" case (to be careful with terms once again, /given sufficiently large input/).
 
 Here are some more examples to tease out the thinking behind the notations, taking into account time complexity:
 
-- $\mathcal{O}(1)$ :: an algorithm with a constant rate of growth. It will take the same amount of time to execute, regardless of the input. An example would be a procedure to check if a list is empty. This is a standard function in Scheme.
+- $\mathcal{O}(1)$ :: an algorithm with a constant rate of growth. It will take the same amount of time to execute, regardless of the input. An example would be a procedure to access an array, or to check if a list is empty. This is a standard function in Scheme.
 #+begin_src scheme
   (null? lst)
 #+end_src
 
-- $\mathcal{O}(n)$ :: an algorithm with a linear rate of growth. The time it takes to execute will grow in proprotion to the input. An example would be a procedure that checks if an element is in a list.
+- $\mathcal{O}(n)$ :: an algorithm with a linear rate of growth. The time it takes to execute will grow in proportion to the input. An example would be a procedure that checks if an element is in a list.
 #+begin_src scheme
   (define (elem-in? elem lst)
     (cond ((null? lst) #f)
@@ -417,7 +417,7 @@ Here are some more examples to tease out the thinking behind the notations, taki
 #+end_src
 This procedure, in the worst case, cdr's down the whole list (to find that the element is /not/ present).
 
-- $\mathcal{O}(n^{2})$ :: an algorithm with a faster rate of growth than $\mathcal{O}(n)$. This order is commonly found when procedures involve nesting recursions or iterations. A good example here is a bubble sort, here implemented with vectors:
+- $\mathcal{O}(n^{2})$ :: an algorithm running in polynomial time, a faster rate of growth than $\mathcal{O}(n)$. This order is commonly found when procedures involve nesting recursions or iterations. A good example here is a bubble sort, here implemented with vectors:
 #+begin_src scheme :results no 
     (define (bubble-sort vec)
       (do ((passes (- (vector-length vec) 1)
@@ -433,20 +433,20 @@ This procedure, in the worst case, cdr's down the whole list (to find that the e
 #+end_src
 Typically, a greater power of $n$ suggests a greater number of nested iterations.
 
-- $\mathcal{O}(2^{n})$ :: an algorithm that with an exponential rate of growth. It grows even faster than the above orders. The [[fib_target][naive recursive generation of Fibonacci numbers]] is a good example of a procedure with this rate of growth.
+- $\mathcal{O}(2^{n})$ :: an algorithm that with an exponential rate of growth. It grows even faster than the above orders. The $2$ given here can be any constant $c$. The [[fib_target][naive recursive generation of Fibonacci numbers]] is a good example of a procedure with this rate of growth, for $c=\varphi$. That is to say, the procedure would take a time complexity of $\mathcal{O}(\varphi^{n})$ (it is, in fact, also $\Theta(\varphi^{n})$). This can be intuited from examination of the Binet formula.
 
-- $\mathcal{O}(n\log n)$ :: an algorithm with time complexity of this order would scale to input in a pseudo-linear fashion (just slightly longer, with even smaller difference for large $n$). An example of this would be a merge sort (which also happens to be $\Theta(n\log n))$).
+- $\mathcal{O}(n\log n)$ :: an algorithm with time complexity of this order would scale to input in a pseudo-linear fashion (just slightly longer, with even smaller difference for large $n$). This type of time complexity denotes a procedure running in /linearithmic time/, unless there is some exponent $k$ on the logarithm, in which case it is said to run /quasilinear time/. An example of this would be a merge sort (which also happens to be $\Theta(n\log n))$).
 #+begin_src scheme 
   (define (merge-sort lst)
-    (cond ((null? lst) lst) ;; checking bounds
-          ((null? (cdr lst)) lst) ;; checking bounds
+    (cond ((null? lst) lst) 
+          ((null? (cdr lst)) lst) 
           (else
            (merge (merge-sort (odd-part lst))
                   (merge-sort (even-part lst))))))
 
   (define (merge lst1 lst2)
-    (cond ((null? lst1) lst2) ;; checking bounds
-          ((null? lst2) lst1) ;; checking bounds
+    (cond ((null? lst1) lst2) 
+          ((null? lst2) lst1) 
           ((> (car lst1) (car lst2))
            (cons (car lst2) (merge lst1 (cdr lst2)) ))
           (else (cons (car lst1) (merge (cdr lst1) lst2)))))
@@ -485,8 +485,100 @@ Typically, a greater power of $n$ suggests a greater number of nested iterations
   (define right-subtree caddr)
 #+end_src
 
+Because they are simply aymptotic bounds, orders of growth only give a rough approximation of how we can expect a procedure to behave. 
 
-*** Exponentiation
+**** Exercise 1.14
+We are asked to recall the change-counting function from earlier, and to determine its space and time complexity.
+#+begin_src scheme
+    (define (count-combos units amount)
+      (cond ((< amount 0) 0)
+            ((= amount 0) 1)
+            ((null? units) 0)
+            (else (+ (count-combos units (- amount (car units)))
+                     (count-combos (cdr units) amount)))))
+
+    (define ($-combos amount)
+     (count-combos '(50 25 10 5 1) amount))
+
+    ($-combos 100)
+#+end_src
+
+This procedure resembles a tree-structure in its evaluation (with the =+= operator as a root node and two recursive function calls as children of the node), so the number of steps for the procedure will be given by the height of the tree. We recall that the height of a binary tree such as this is given by $2n-1$, so the number of steps (that is, the time-complexity) for the procedure will be $\mathcal{O}(n)$.
+
+Now we find the space complexity. For a list of 0 denominations, and an amount $n$, the program ends without recursion, so it would execute in memory of $\mathcal{O}(1)$. For a list of 1 denomination, and an amount $n$, we would have two recursions. One branch ends immediately (let this be the left branch), the other recurs again with $n$ minus the denomination (let this be the right branch). This continues, forming a tree of nodes with terminated left branches and a chain of branches on the right that continues so long as the repeated subtractions of the one denomination do not exhaust the amount. Assuming this single denomination is 1, the smallest possible amount, we have $n$ branchings, so the memory takes $\mathcal{O}(n)$. For denominations larger than 1, we have fewer than $n$ branchings, so $f(n) = \mathcal{O}(n)$ still holds. For a list of 2 denominations, we have for the right branch a tree that ignores the first denomination, and so takes $\mathcal{O}(n)$ just as before, but we must also take into account the memory consumed by the left branch. The left branch will, far on one side, continually subtract the first denomination only until the amount is exhausted, which is $\mathcal{O}(n)$. So far, we have $\mathcal{O}(2n)$, which is the same as $\mathcal{O}(n)$. However, /each/ node after this operation will have a right branch that runs down the second denomination, and all of those will take $\mathcal{O}(n)$ using the same reasoning as above. So then we have $\mathcal{O}(n^{2})$.
+
+If we extend this reasoning, we come to see that the memory of this procedure, scaling to input size, takes a polynomial order of time complexity $\mathcal{O}(n^c)$ where $c$ is the number of denominations to run through. In other words, it's highly inefficient.
+
+**** Exercise 1.15
+This exercises concerns a procedure for numerical approximation.
+The sine of an angle can be approximated by taking into account the fact that $sin x \equiv x$ for sufficiently small $x$ (less than or equal to 0.1 radians), and the trigonometric identity
+$$sin x = 3 sin\frac{x}{3}-4sin^{3}\frac{x}{3}$$
+
+The book presents the following procedure:
+
+#+begin_src scheme
+  (define (cube x) (* x x x))
+  (define (p x) (- (* 3 x) (* 4 (cube x))))
+  (define (sine angle)
+    (if (not (> (abs angle) 0.1))
+        angle
+        (p (sine (/ angle 3.0)))))
+#+end_src
+
+a. /How many times is the procedure =p= applied when =(sine 12.15)= is evaluated?/
+
+#+begin_src scheme
+  (sine 12.15)
+  (p (sine 4.05))
+  (p (p (sine 1.35)))
+  (p (p (p (sine 0.45))))
+  (p (p (p (p (sine 0.15)))))
+  (p (p (p (p (p (sine 0.05))))))
+  (p (p (p (p (p 0.05)))))
+  ;; ...
+
+#+end_src
+
+=p= is applied 5 times.
+
+b. /What is the order of growth in space and number of steps (as a function of *a*) used by the process generated by the =sine= procedure when =(sine a)= is evaluated?/
+
+This procedure is linear recursive, and so the space and steps required will both be related to the number of calls to =sine= that are required. This is directly dependent on how many times the input =a= can be divided by 3 until it is of a certain value-- so we have the same number of =sine= calls until our input =a= triples in value. This indicates that our order of growth is precisely $\Theta{(\log_{3}n)}$.
+
+*** Fast Exponentiation
+A naive recursive approach to exponentiation, such as
+#+begin_src scheme
+  (define (expt b n)
+    (if (= n 0)
+        1
+        (* b (expt b (- n 1)))))
+
+#+end_src
+Would, as a linear recursive process, require both $\Theta(n)$ steps and $\Theta(n)$ time.
+
+An iterative version, such as
+#+begin_src scheme
+  (define (expt b n)
+    (expt-iter b n 1))
+  (define (expt-iter b counter product)
+    (if (= counter 0)
+        product
+        (expt-iter b
+                   (- counter 1)
+                   (* b product))))
+
+#+end_src
+
+would require $\Theta(n)$ steps but only $\Theta(1)$ space.
+
+But we can make a procedure even more efficient by making use of the equalities
+$$\begin{align}b^{n} &= (b^{n/2})^{2} &\text{if n$ is even} \\
+b^{n} &= b\cdot b^{n-1} &\text{if $n$ is odd} \end{align}$$
+
+As we saw earlier with approximations of $sine$, dramatically operating upon the procedure's input (such through division) using equalities can dramatically reduce a procedure's order of growth.
+
+
+ 
 *** GCD
 *** Primality
 ** 1.3 Higher-Order Procedures
@@ -495,7 +587,8 @@ Typically, a greater power of $n$ suggests a greater number of nested iterations
 *** General Methods
 *** Returned Values
 * Data Abstraction
-* Modularity, Objects, and State
-* 
+* Modularity, Objects, and State 
+* Metalinguistic Abstraction
+* Register Machines
 
 [2]: SICP 2nd ed., page 49
