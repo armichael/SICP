@@ -1,5 +1,6 @@
 #+TITLE: SICP
 #+AUTHOR: Andrew Michael
+#+LATEX_HEADER: \usepackage{pseudocode,algorithm2e,mathtools,amsthm,amssymb,enumitem} \renewcommand{\thepseudocode}{}
 #+BABEL: :exports both
 
 ------------------------
@@ -267,9 +268,9 @@ _{n \> times}$$
 
 Similarly, =(A 3 n)= will be an operation with a greater rate of growth than tetration. And =(A 4 n)= even greater than that, and so on. Incomprehensibly fast rates of growth. For a bit of math humor involving very large numbers, check out [[http://en.wikipedia.org/wiki/Steinhaus%E2%80%93Moser_notation][Steinhaus-Moser notation]].
 
-At this point you might be realize, as I did, that SICP is partly a math book in disguise. 
+At this point you might be realize, as I did, that SICP is partly a math book in disguise. Indeed, the first part of the book features heaps of problems focused on basic numerical analysis, as we'll see soon with Fibonacci numbers and exponentiation. This is likely because it was expected that MIT students at the time, taking the original SICP course, would be both familiar with and interested in these sorts of problems. Unfortunately, it can turn off certain contemporary readers who might be more interested in "practical" problems and software development. SICP's focus on numerical analysis, "domain knowledge", and the abstract nature of computation was partly the impetus for Matthias Felleisen's article [[http://www.ccs.neu.edu/racket/pubs/jfp2004-fffk.pdf][The Structure and Intepretation of the Computer Science Curriculum]] and his book /How to Design Programs/. 
 
-Essentialy, /programs are proofs/, and indeed, introductory books like SICP and Concrete Abstractions ask you to do a bit of proof-writing to prove for correctness. So it pays to have a bit of math know-how in the pocket before approaching this material, especially in proof through induction. CA will teach you much of this from first principles-- SICP mostly assumes that you are already familiar with it. This is one reason I'd always recommend CA over SICP for anyone unconfident in their mathematical sophistication.
+Essentialy, /programs are proofs/, and indeed, introductory books like SICP and Concrete Abstractions, that are grounded in building up your intuition for abstraction, ask you to do a bit of proof-writing to prove for correctness. So it pays to have a bit of math know-how in the pocket before approaching this material, especially in proof through induction. CA will teach you much of this from first principles-- SICP mostly assumes that you are already familiar with it. This is one reason I'd always recommend CA over SICP for anyone unconfident in their mathematical sophistication. And of course, if the idea on your mind is "when am I ever going to use this", from what I've heard HtDP is a great alternative to both.
 
 *** Fibonacci Numbers and Tree Recursion
 Recall the definition of the Fibonacci sequence:
@@ -342,12 +343,11 @@ As they mention in the book, you solve this problem by recognizing that the ways
 
 This is mirrored in the program above. The main two recursive branches investigate these very two things, and each new branch generates two more branches. Particular branches that "don't work" will yield negative amounts or will run out the coin list before the starting amount is exhausted (so they aren't counted, and evaluate to 0). The combinations that do work will exhaust the amount to 0, and will evaluate to 1. All the branches explored contract under addition operations (which rest at the root of each pair of branches), adding up all the 1's and 0's to the final result. 
 
-**** Exercise 1.12
-We are asked to write a procedure to compute elements of Pascal's triangle by means of a recursive process. 
+**** Exercise 1.12: Pascal's Triangle
+We are asked to write a procedure to compute elements of Pascal's triangle by means of a recursive process. If you study any amount of integer-heavy math, you'll be good friends with Pascal's triangle.
 
 Explicitly, these elements (binomial coefficients) can be given by $$\frac{n!}{k!(n-k)!}$$
-
-But we're asked to solve this with a recursive function. Easy enough-- any element of the triangle is given by the sum of the two elements above it.
+Translating that into a procedure would not be entirely ideal. Fair enough-- any element of the triangle is given by the sum of the two elements above it. A brief sketch:
 
 #+begin_src scheme
   (define (PT-elem row col)
@@ -355,13 +355,35 @@ But we're asked to solve this with a recursive function. Easy enough-- any eleme
         1
         (+ (PT-elem (- row 1) col)
            (PT-elem (- row 1) (- col 1)))))
-(PT-elem 5 2)
 #+end_src
 
-#+RESULTS:
-: 10
+Mathematically, the above procedure makes use of the fact that
+$${n \choose k} = {n-1 \choose k} + {n-1 \choose k-1}$$
 
-**** Exercise 1.13
+Another method we can use involves the following equality:
+$${n \choose k} = \frac{n}{k}{n-1 \choose k-1}$$
+
+With this method, we can generate a linear recursive process. It will create a chain of multiplications of fractions with a length of $k$-- one base case will be $k=1$ which will give $n$, the other base case will be $n=k$ which will give $1$. Additionally, we can further optimize the program by checking to see if we can reduce the problem using the equality
+$${n \choose k} = {n \choose k-1}$$
+
+We use a 'named let' construct for iterating, and give the program parameter names closer to our definitions to be consistent.
+
+#+begin_src scheme
+  (define (choose n k)
+    (if (> k n) 0      ;; only needs checked here
+        (let loop ((n n) (k k) (product 1))
+          (cond ((= n k) product)
+                ((> k (/ n 2)) (loop n (- n k) product))
+                ((= k 1) (* n product))
+                (else (loop (- n 1)
+                            (- k 1)
+                            (* (/ n k) product)))))))
+#+end_src
+
+While this procedure required more code, it's much more efficient and also validates input. Anticipating the next section, we compare the rates of growth for these procedures. I'll use $x$ instead of the standard $n$ to avoid confusion in these notations. The first procedure, for large input, would have time complexity of $\mathcal{O}(x)$ but a space complexity of $\mathcal{O}(x^{k})$, which would quickly get out of hand-- and drawing a tree of the procedure will quickly show that there's much redundant computation. But our new procedure has a time complexity of $\mathcal{O}(x)$ (the worst case is running $k/2$ or $k\cdot \frac{1}{2}$ evaluations (and $\mathcal{O}(x) = \mathcal{O}(c\cdot x)$) and a space complexity of $\mathcal{O}(1)$. Much better. We'll discuss what these symbols mean soon.
+
+
+**** Exercise 1.13: The Binet Formula
 We prove that the $n$th Fibonacci number is the closest integer to $\varphi^{n}/\sqrt{5}$. The text gives us a hint: recall that $\varphi = 1+\sqrt{5}/2$ and let $\psi = (1 - \sqrt{5})/2$: use induction to prove that $Fib(n) = (\varphi^{n}-\psi^{n})/\sqrt{5}$.
 
 Essentially, the book is using $\psi$ to represent $-1/\varphi$ (see my article on phi for derivations: http://armichael.github.io/posts/2015-03-12-Phi.html#fn1).
@@ -546,17 +568,16 @@ b. /What is the order of growth in space and number of steps (as a function of *
 This procedure is linear recursive, and so the space and steps required will both be related to the number of calls to =sine= that are required. This is directly dependent on how many times the input =a= can be divided by 3 until it is of a certain value-- so we have the same number of =sine= calls until our input =a= triples in value. This indicates that our order of growth is precisely $\Theta{(\log_{3}n)}$.
 
 *** Fast Exponentiation
-A naive recursive approach to exponentiation, such as
+A naive recursive approach to exponentiation, such as (book's example, p.57):
 #+begin_src scheme
   (define (expt b n)
     (if (= n 0)
         1
         (* b (expt b (- n 1)))))
-
 #+end_src
 Would, as a linear recursive process, require both $\Theta(n)$ steps and $\Theta(n)$ time.
 
-An iterative version, such as
+An iterative version, such as (book's example, p.58):
 #+begin_src scheme
   (define (expt b n)
     (expt-iter b n 1))
@@ -566,21 +587,194 @@ An iterative version, such as
         (expt-iter b
                    (- counter 1)
                    (* b product))))
-
 #+end_src
 
 would require $\Theta(n)$ steps but only $\Theta(1)$ space.
 
 But we can make a procedure even more efficient by making use of the equalities
-$$\begin{align}b^{n} &= (b^{n/2})^{2} &\text{if n$ is even} \\
-b^{n} &= b\cdot b^{n-1} &\text{if $n$ is odd} \end{align}$$
+\begin{align}b^{n} = (b^{n/2})^{2} &\text{  if $n$ is even} \\
+b^{n} = b\cdot b^{n-1} &\text{  if $n$ is odd} \end{align}
 
-As we saw earlier with approximations of $sine$, dramatically operating upon the procedure's input (such through division) using equalities can dramatically reduce a procedure's order of growth.
+As we saw earlier with approximations of $sine$, operating upon the procedure's input using equalities can dramatically reduce a procedure's order of growth. 
 
+I'll jump straight to the next exercise, which asks us to write an iterative procedure for fast exponentiation.
 
- 
+**** Exercise 1.16
+We are asked to write a procedure that requires a logarithmic number of steps.
+
+#+begin_src scheme
+  (define (fast-exp b n)
+    (let loop ((b b) (n n) (product 1))
+      (cond ((= n 1) product)
+            ((even? n) (loop b (/ n 2) (* product b b)))
+            (else (loop b (- n 1) (* product b))))))
+#+end_src
+
+This is a subject that /Concrete Abstractions/ fleshed out in much greater detail than SICP. Particularly, CA walks you through the steps of optimizing a procedure to compute basic digital signatures. This makes use of properties of modular arithmetic to break up the very large numbers used as keys and signing exponents so they can be computed quickly. I recommend following through that chapter if you're interesting in cryptography or number theory. 
+
+**** Exercise 1.19
+We are asked to find a process to procure Fibonacci numbers that evaluates in a logarithmic number of steps. The authors give us some hints: in previous attempt to compute Fibonacci numbers, we used a transformation $T$ such that $a \leftarrow a + b$ and $b \leftarrow a$, with base cases $a=1$ and $b=0$. Applying $T$ an $n$ number of times thereby produces $a= Fib(n+1)$ and $b=Fib(n)$. We are asked to consider that $T$ is the special case of $p=0$ and $q=1$ in a family of transformations $T_{p.q}$, such that $T_{pq}$ transforms our pair $(a,b)$ according to the rules
+$$a \leftarrow bq + aq + ap$$
+$$b \leftarrow bp + aq$$
+
+If we apply this transformation twice, we see that the outcome is the same as applying one transformation $T_{p'q'}$ such that $p$ and $q$ are in terms of $p$ and $q$. Do the algebra (just use the rules as their own parameters) and you'll find that $p'=p^{2}+q^{2}$ and $q'=2qp+q^{2}$. This, the authors tell us, gives us an explicit way to square transformations and thereby compute $T$ for some $n$ using successive squaring.
+
+We are given the following code to complete:
+
+#+begin_src scheme
+  (define (fib n)
+    (fib-iter 1 0 0 1 n))
+  (define (fib-iter a b p q count)
+    (cond ((= count 0) b)
+          ((even? count) (fib-iter a b
+                                   ⟨??⟩ ; compute p′
+                                   ⟨??⟩ ; compute q′
+                                   (/ count 2)))
+          (else (fib-iter (+ (* b q) (* a q) (* a p)) 
+                          (+ (* b p) (* a q))
+                          p q
+                          (- count 1))))
+#+end_src
+
+Plugging in the values obtained earlier we have
+
+#+begin_src scheme
+  (define (fib n)
+    (fib-iter 1 0 0 1 n))
+  (define (fib-iter a b p q count)
+    (cond ((= count 0) b)
+          ((even? count) (fib-iter a b
+                                   ⟨+ (square p) (square q)⟩
+                                   ⟨+ (* 2 q p) (square q)⟩ 
+                                   (/ count 2)))
+          (else (fib-iter (+ (* b q) (* a q) (* a p)) 
+                          (+ (* b p) (* a q))
+                          p q
+                          (- count 1))))
+#+end_src
+
+Any time the count is even, $T_{p'q'}$, the square of two $T_{pq}$ transformations will be applied, halving the count. Anytime the count is odd, it will be decremented by one and the transformation $T_{pq}$ will be applied.
+
+You might rightfully be wondering why these rules work to compute Fibonacci numbers. In fact, it is an extension of a popular theory amongst Fibonacci enthusiasts called the Fibonacci Q-matrix, which uses linear algebra. You can learn more about that method [[www.goldenmuseum.com/1505FibMatrix_engl.html][here]] and [[mathworld.wolfram.com/FibonacciQ-Matrix.html][here]]. Generally, if you ever see something unusual involving Fibonacci numbers, you may assume it is a derivation of a property-- and properties of Fibonacci numbers are still being discovered.
+
+I don't particularly agree with this exercise's place in the text. The exposition is rather sparse (it isn't mathematically informative), and the reader's role is reduced to simple algebra and substitution into already written code. SICP's somewhat bogus exercises are another area where I feel Concrete Abstractions is a bit stronger for those who are self-teaching. Many of SICP's passages and exercises seem best supplemented with course lecture (and there are, of course, the [[http://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-001-structure-and-interpretation-of-computer-programs-spring-2005/video-lectures/][SICP lectures]]).
+
 *** GCD
+
+Recall Euclid's algorithm for finding the greatest common divisor:
+
+\begin{pseudocode}{GCD}{a,b}
+\WHILE b \neq 0 \DO
+\BEGIN
+r \GETS a\bmod{b}\\
+a \GETS b\\
+b \GETS r
+\END\\
+
+\RETURN{a}
+
+\end{pseudocode}
+
+An example:
+
+$$\textit{GCD}(284,168)\\
+\begin{enumerate}[label=\bfseries Iteration \arabic*:]
+\item[\textit{GCD}\text{(284,168)}]
+\item $r = 284\bmod{168} = 116 $\\ $a = 168,~ b = 116$
+\item $r = 168\bmod{116} = 52 $\\ $a = 116,~ b = 52$
+\item $r = 116\bmod{52} = 12 $\\ $a = 52,~ b = 12$
+\item $r = 52\bmod{12} = 4 $\\ $a = 12,~ b = 4$
+\item $r = 12\bmod{4} = 0 $\\ $a = 4,~ b = 0$
+\item \textsc{Result }$= 4$ \\
+\end{enumerate}$$
+
+This is an iterative process with logarithmic growth, and it can be implemented in scheme as follows:
+
+#+begin_src scheme
+  (define (gcd a b)
+    (if (= b 0)
+        a
+        (gcd b (remainder a b))))
+#+end_src
+
+**** Exercise 1.20
+
+We are asked to find how many =remainder= operations will be performed when we compute =(gcd 206 40)= with normal-order evaluation and applicative-order evaluation respectively.
+
+#+begin_src scheme
+  ;; normal-order eval
+  (gcd 206 40)
+  (gcd 40 (remainder 206 40)) ;; checks b, remainder-eval-count at 1
+  (gcd (remainder 206 40) (remainder 40 (remainder 206 40))) ;; +2, count at 3
+  (gcd (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))) ;; +4, count at 7
+  (gcd (remainder (remainder 206 40) (remainder 40 (remainder 206 40))) 
+       (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40))))) ;; +7, count at 14
+  ;; in the last expression, b evaluates to 0 with seven remainder calls
+  ;; then a evaluates, finally, because it passes the test condition, and 4 more remainder calls are made
+  ;; thus, 18 calls to remainder in total
+
+
+  ;; applicative-order eval
+  (gcd 206 40)
+  (gcd 40 (remainder 206 40))
+  (gcd 40 6)
+  (gcd 6 (remainder 40 6))
+  (gcd 6 4)
+  (gcd 4 (remainder 6 4))
+  (gcd 4 2)
+  (gcd 2 (remainder 4 2))
+  (gcd 2 0)
+  ;; 4 calls to remainder
+#+end_src
+
 *** Primality
+One way to check if a number $n$ is prime is to see if it has divisors, starting from 2, and extending to $\sqrt{.n}$. It suffices just to check these numbers and no more because if there is a root of $n$, it is not prime, and if there is some divisor $b$ such that $b>\sqrt{ n}$, then $ab = n$ for some other divisor $a$, with $a < \sqrt{n}$, hence, already checked.
+
+The book provides the following code:
+
+#+begin_src scheme
+  (define (find-divisor n test-divisor)
+    (cond ((> (square test-divisor) n) n)
+          ((divides? test-divisor n) test-divisor)
+          (else (find-divisor n (+ test-divisor 1)))))
+  (define (prime? n)
+    (= n (smallest-divisor n)))
+#+end_src 
+
+Time complexity will be $\Theta(\sqrt{n})$.
+
+**** Fermat's Little Theorem -- Probabilistic Algorithms
+As per the book:
+- Fermat's Little Theorem :: If $n$ is a prime number and $a$ is any positive integer less than $n$, then $a$ raised to the $n^{th}$ power is congruent to $a \mod n$.
+
+Namely,
+$$a^n \equiv a \
+pmod n$$
+
+We can perform a "Fermat test" for primality by constructing a logarithmic-time procedure to find the exponential of a number mod some other number.
+
+From the book:
+
+#+begin_src scheme
+  (define (expmod base exp m)
+    (cond ((= exp 0) 1)
+          ((even? exp)
+           (remainder
+            (square (expmod base (/ exp 2) m))
+            m))
+          (else
+           (remainder
+            (* base (expmod base (- exp 1) m))
+            m))))
+#+end_src 
+
+One can use this procedure to define a Fermat-test that randomly checks a specified amount of numbers less than $n$ to see if the identity holds. The result is fundamentally probabilitic-- we won't ever be entirely /certain/ that it is prime unless we check all the numbers less than $n$, but sometimes this isn't feasible. Additionally, we can make the margin of error small enough that the procedure can still be useful to us.
+
+A Fermat test can check the primality of very large numbers within seconds, whereas factoring those numbers would take a very, very long time. This is the basis for the application of RSA cryptography in electronic communication security.
+
+This section also describes numbers that can fool the Fermat test, /Carmichael numbers/, and a variant of the Fermat test, the /Miller-Rabin test/, that can overcome this difficulty.
+
+
 ** 1.3 Higher-Order Procedures
 *** Procedures as Arguments
 *** Lambda
